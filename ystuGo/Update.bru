@@ -1,0 +1,25 @@
+meta {
+  name: Update
+  type: http
+  seq: 4
+}
+
+post {
+  url: http:localhost:9091/keyboard
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "KeycapType": "Пластиковые",
+    "BaseType": "Пластиковые",
+    "SwitchType": "Красные",
+    "Color": "Белый"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

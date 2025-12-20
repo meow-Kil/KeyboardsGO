@@ -1,0 +1,15 @@
+meta {
+  name: getALL
+  type: http
+  seq: 1
+}
+
+get {
+  url: http:localhost:9091/keyboard
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "ystuGo",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
