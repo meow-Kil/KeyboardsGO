@@ -48,12 +48,15 @@ func (s *Server) writeJson(w http.ResponseWriter, data any) {
 
 
 
-func New(keyboard ports.KeyboardService) *Server {
+func New(keyboard ports.KeyboardService, staticPath string) *Server {
 	mux := http.NewServeMux()
+	
+	fileServer := http.FileServer(http.Dir(staticPath))
+	mux.Handle("/", fileServer)
 	
 
 	srv := http.Server{
-		Addr: ":9090",
+		Addr: ":9000",
 		Handler: mux, 
 		DisableGeneralOptionsHandler: false,
 		ReadTimeout: 5 * time.Second,
