@@ -13,27 +13,32 @@ type PostgresStorage struct {
 }
 
 func NewPostgresStorage() (*PostgresStorage, error) {
-	// Подключение к PostgreSQL
-	// Измените параметры подключения при необходимости
 	connStr := "user=postgres password=111 dbname=KeyboardGO sslmode=disable host=localhost port=5432"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}
 
-	// Проверка подключения
+
 	if err := db.Ping(); err != nil {
 		return nil, err
 	}
 
 	log.Println("Connected to PostgreSQL database")
 	
-	// Создание таблицы, если не существует
+
 	if err := createTable(db); err != nil {
 		return nil, err
 	}
 	
 	log.Println("Table 'keyboards' created or already exists")
+
+	if err := createUsersTable(db); err != nil {
+		return nil, err
+	}
+	
+	log.Println("Table 'users' created or already exists")
+	
 	
 	return &PostgresStorage{db: db}, nil
 }
@@ -54,6 +59,19 @@ func createTable(db *sql.DB) error {
 	}
 	return err
 }
+
+func createUsersTable(db *sql.DB) error {
+    query := `
+    CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        login VARCHAR(100) NOT NULL UNIQUE,
+        password VARCHAR(100) NOT NULL,
+        is_admin BOOLEAN DEFAULT FALSE
+    )`
+    _, err := db.Exec(query)
+    return err
+}
+
 
 func (s *PostgresStorage) Close() {
 	if s.db != nil {
@@ -156,4 +174,24 @@ func (s *PostgresStorage) Update(id uint, keyboard domain.Keyboard) *domain.Keyb
 	return &updatedKeyboard
 }
 
-// ... остальные методы MemoryStorage
+func (s *PostgresStorage) AddUser(login, password string, isAdmin bool) (*domain.User, error) {
+    query := `INSERT INTO users (login, password, is_admin) VALUES ($1, $2, $3) RETURNING id`
+    var id uint
+    err := s.db.QueryRow(query, login, password, isAdmin).Scan(&id)
+    if err != nil {
+        return nil, err
+    }
+    return &domain.User{ID: id, Login: login, Password: password, IsAdmin: isAdmin}, nil
+}
+
+func (s *PostgresStorage) GetUserByLogin(login string) (*domain.User, error) {
+    query := `SELECT id, login, password, is_admin FROM users WHERE login = $1`
+    row := s.db.QueryRow(query, login)
+    var user domain.User
+    err := row.Scan(&user.ID, &user.Login, &user.Password, &user.IsAdmin)
+    if err != nil {
+        return nil, err
+    }
+    return &user, nil
+}
+

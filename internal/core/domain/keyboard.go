@@ -6,5 +6,11 @@ type Keyboard struct{
 	BaseType string
 	SwitchType string
 	Color string
+}
 
+type User struct {
+    ID       uint
+    Login    string
+    Password string
+    IsAdmin  bool
 }

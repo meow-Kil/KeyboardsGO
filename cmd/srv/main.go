@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	"log"
 
 	"github.com/meow-Kil/KeyboardsGO/internal/adapters/storage"
 	"github.com/meow-Kil/KeyboardsGO/internal/adapters/web/server"
@@ -11,12 +10,12 @@ import (
 
 func main() {
 	_storage, err := storage.NewPostgresStorage()
-	if err != nil {}
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer _storage.Close()
 
 	_keyboardService := service.NewKeyboard(_storage)
-	pwd, _ := os.Getwd()
-fmt.Println(pwd)
-srv := server.New(_keyboardService, "./static")
+	srv := server.New(_keyboardService, _storage, "./static")
 	srv.Listen()
 }

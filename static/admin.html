@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #4CAF50;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .logout-btn {
+            padding: 8px 16px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .logout-btn:hover {
+            background-color: #d32f2f;
+        }
+        form {
+            background: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.delete {
+            background-color: #f44336;
+        }
+        button.delete:hover {
+            background-color: #d32f2f;
+        }
+        button.cancel {
+            background-color: #9e9e9e;
+        }
+        button.cancel:hover {
+            background-color: #757575;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+        #editKeyboardForm {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            z-index: 1000;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Управление клавиатурами</h1>
+        <div class="user-info">
+            <span id="currentUser"></span>
+            <button class="logout-btn" onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <form id="addKeyboardForm">
+        <h2>Добавить клавиатуру</h2>
+        <input type="text" id="keycapType" placeholder="Тип колпачков" required>
+        <input type="text" id="baseType" placeholder="Тип основы" required>
+        <input type="text" id="switchType" placeholder="Тип свитчей" required>
+        <input type="text" id="color" placeholder="Цвет" required>
+        <button type="submit">Добавить</button>
+    </form>
+
+    <h2>Список клавиатур</h2>
+    <table id="keyboardsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Тип колпачков</th>
+                <th>Тип основы</th>
+                <th>Тип свитчей</th>
+                <th>Цвет</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <div class="overlay" id="editOverlay"></div>
+    <form id="editKeyboardForm" style="display: none;">
+        <h2>Редактировать клавиатуру</h2>
+        <input type="hidden" id="editId">
+        <input type="text" id="editKeycapType" placeholder="Тип колпачков" required>
+        <input type="text" id="editBaseType" placeholder="Тип основы" required>
+        <input type="text" id="editSwitchType" placeholder="Тип свитчей" required>
+        <input type="text" id="editColor" placeholder="Цвет" required>
+        <button type="submit">Сохранить</button>
+        <button type="button" class="cancel" onclick="cancelEdit()">Отмена</button>
+    </form>
+
+    <script src="admin.js"></script>
+    <script>
+        function logout() {
+            localStorage.clear();
+            window.location.href = "/index.html";
+        }
+        
+        function updateUserInfo() {
+            const userLogin = localStorage.getItem('userLogin');
+            if (userLogin) {
+                document.getElementById('currentUser').textContent = `Администратор: ${userLogin}`;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', updateUserInfo);
+    </script>
+</body>
+</html>

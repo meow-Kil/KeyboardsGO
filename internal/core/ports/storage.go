@@ -8,4 +8,6 @@ type Storage interface{
 	GetById(id uint) *domain.Keyboard
 	Remove(id uint)
 	Update(id uint, keyboard domain.Keyboard)  *domain.Keyboard
+	AddUser(login, password string, isAdmin bool) (*domain.User, error)
+    GetUserByLogin(login string) (*domain.User, error)
 }
