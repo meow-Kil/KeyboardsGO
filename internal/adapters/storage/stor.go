@@ -38,6 +38,10 @@ func NewPostgresStorage() (*PostgresStorage, error) {
 	}
 	
 	log.Println("Table 'users' created or already exists")
+
+	if err := createKeycapTypesTable(db); err != nil {
+    return nil, err
+	}
 	
 	
 	return &PostgresStorage{db: db}, nil
@@ -70,6 +74,16 @@ func createUsersTable(db *sql.DB) error {
     )`
     _, err := db.Exec(query)
     return err
+}
+
+func createKeycapTypesTable(db *sql.DB) error {
+	query := `
+	CREATE TABLE IF NOT EXISTS keycap_types (
+		id SERIAL PRIMARY KEY,
+		name VARCHAR(100) NOT NULL UNIQUE
+	)`
+	_, err := db.Exec(query)
+	return err
 }
 
 
@@ -193,5 +207,69 @@ func (s *PostgresStorage) GetUserByLogin(login string) (*domain.User, error) {
         return nil, err
     }
     return &user, nil
+}
+
+func (s *PostgresStorage) AddKeycapType(kt domain.KeycapType) domain.KeycapType {
+	query := `INSERT INTO keycap_types (name) VALUES ($1) RETURNING id`
+	var id uint
+	err := s.db.QueryRow(query, kt.Name).Scan(&id)
+	if err != nil {
+		log.Printf("Error adding keycap type: %v", err)
+		return kt
+	}
+	kt.ID = id
+	return kt
+}
+
+func (s *PostgresStorage) GetKeycapTypes() []domain.KeycapType {
+	rows, err := s.db.Query(`SELECT id, name FROM keycap_types ORDER BY id`)
+	if err != nil {
+		log.Printf("Error getting keycap types: %v", err)
+		return []domain.KeycapType{}
+	}
+	defer rows.Close()
+
+	var types []domain.KeycapType
+	for rows.Next() {
+		var kt domain.KeycapType
+		if err := rows.Scan(&kt.ID, &kt.Name); err != nil {
+			log.Printf("Error scanning keycap type: %v", err)
+			continue
+		}
+		types = append(types, kt)
+	}
+	return types
+}
+
+func (s *PostgresStorage) GetKeycapTypeByID(id uint) *domain.KeycapType {
+	var kt domain.KeycapType
+	err := s.db.QueryRow(`SELECT id, name FROM keycap_types WHERE id = $1`, id).
+		Scan(&kt.ID, &kt.Name)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		log.Printf("Error getting keycap type by id: %v", err)
+		return nil
+	}
+	return &kt
+}
+
+func (s *PostgresStorage) UpdateKeycapType(id uint, kt domain.KeycapType) *domain.KeycapType {
+	query := `UPDATE keycap_types SET name = $1 WHERE id = $2 RETURNING id, name`
+	var updated domain.KeycapType
+	err := s.db.QueryRow(query, kt.Name, id).Scan(&updated.ID, &updated.Name)
+	if err != nil {
+		log.Printf("Error updating keycap type: %v", err)
+		return nil
+	}
+	return &updated
+}
+
+func (s *PostgresStorage) DeleteKeycapType(id uint) {
+	_, err := s.db.Exec(`DELETE FROM keycap_types WHERE id = $1`, id)
+	if err != nil {
+		log.Printf("Error deleting keycap type: %v", err)
+	}
 }
 

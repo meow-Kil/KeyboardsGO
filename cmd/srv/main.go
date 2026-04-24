@@ -16,6 +16,7 @@ func main() {
 	defer _storage.Close()
 
 	_keyboardService := service.NewKeyboard(_storage)
-	srv := server.New(_keyboardService, _storage, "./static")
+	_keycapTypeService := service.NewKeycapType(_storage)   
+	srv := server.New(_keyboardService, _keycapTypeService, _storage, "./static")
 	srv.Listen()
 }

@@ -17,6 +17,7 @@ type Server struct {
 	keyboard ports.KeyboardService
 	storage  ports.Storage
 	sessions map[string]Session
+	keycapType ports.KeycapTypeService
 }
 
 type Session struct {
@@ -107,7 +108,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Проверка, не существует ли уже пользователь с таким логином
+
 	existingUser, err := s.storage.GetUserByLogin(req.Login)
 	if err == nil && existingUser != nil {
 		w.WriteHeader(http.StatusConflict)
@@ -118,7 +119,6 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Сохраняем пользователя в базу данных
 	user, err := s.storage.AddUser(req.Login, req.Password, req.IsAdmin)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -174,7 +174,6 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Проверка прав администратора, если требуется вход в админ-панель
 	if req.LoginType == "admin" && !user.IsAdmin {
 		w.WriteHeader(http.StatusForbidden)
 		s.writeJson(w, map[string]interface{}{
@@ -184,10 +183,10 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Генерация токена сессии
+	
 	token := s.generateSessionToken()
 	
-	// Сохраняем сессию
+
 	s.sessions[token] = Session{
 		UserID:  user.ID,
 		Login:   user.Login,
@@ -217,7 +216,7 @@ func (s *Server) generateSessionToken() string {
 	return strconv.FormatInt(time.Now().UnixNano(), 36) + "-" + strconv.FormatInt(time.Now().Unix(), 36)
 }
 
-func New(keyboard ports.KeyboardService, storage ports.Storage, staticPath string) *Server {
+func New(keyboard ports.KeyboardService, keycapType ports.KeycapTypeService, storage ports.Storage, staticPath string) *Server {
 	mux := http.NewServeMux()
 	fileServer := http.FileServer(http.Dir(staticPath))
 	mux.Handle("/", fileServer)
@@ -229,6 +228,7 @@ func New(keyboard ports.KeyboardService, storage ports.Storage, staticPath strin
 
 	server := &Server{
 		keyboard: keyboard,
+		keycapType: keycapType,
 		storage:  storage,
 		srv:      &srv,
 		mux:      mux,
@@ -238,11 +238,33 @@ func New(keyboard ports.KeyboardService, storage ports.Storage, staticPath strin
 	return server
 }
 
+
 func (s *Server) Listen() {
 	s.MuxKeyboard()
+	s.MuxKeycapType()
 	s.srv.Handler = s.enableCORS(s.mux)
 	err := s.srv.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func (s *Server) isAuthorized(r *http.Request) bool {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return false
+	}
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return false
+	}
+	token := parts[1]
+	session, exists := s.sessions[token]
+	if !exists || time.Now().After(session.Expires) {
+		if exists {
+			delete(s.sessions, token)
+		}
+		return false
+	}
+	return true
 }

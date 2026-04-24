@@ -7,3 +7,4 @@ type Keyboard struct {
 	SwitchType string `json:"switch_type"`
 	Color      string `json:"color"`
 }
+

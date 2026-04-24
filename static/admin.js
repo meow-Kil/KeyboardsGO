@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Проверка авторизации
+  
     const authToken = localStorage.getItem('authToken');
     const isAdmin = localStorage.getItem('isAdmin');
     
@@ -13,19 +13,55 @@ document.addEventListener("DOMContentLoaded", () => {
     const editKeyboardForm = document.getElementById("editKeyboardForm");
     const editOverlay = document.getElementById("editOverlay");
 
-    // Получение токена авторизации
+  
     function getAuthToken() {
         return localStorage.getItem('authToken');
     }
 
-    // Загрузка клавиатур
+
+    function populateKeycapTypeSelects(types) {
+        const addSelect = document.getElementById("keycapType");
+        const editSelect = document.getElementById("editKeycapType");
+        
+ 
+        addSelect.innerHTML = '<option value="">Выберите тип кейкапов</option>';
+        editSelect.innerHTML = '<option value="">Выберите тип кейкапов</option>';
+        
+        types.forEach(kt => {
+            const option = document.createElement("option");
+            option.value = kt.name; 
+            option.textContent = kt.name;
+            addSelect.appendChild(option);
+            
+            const option2 = document.createElement("option");
+            option2.value = kt.name;
+            option2.textContent = kt.name;
+            editSelect.appendChild(option2);
+        });
+    }
+
+
+    async function refreshKeycapTypeSelects() {
+        try {
+            const token = getAuthToken();
+            const response = await fetch("http://localhost:9000/keycap_types", {
+                headers: { "Authorization": token ? `Bearer ${token}` : "" }
+            });
+            if (response.ok) {
+                const types = await response.json();
+                populateKeycapTypeSelects(types);
+            }
+        } catch (err) {
+            console.error("Ошибка загрузки типов для селектов:", err);
+        }
+    }
+
+
     async function loadKeyboards() {
         try {
             const token = getAuthToken();
             const response = await fetch("http://localhost:9000/keyboard", {
-                headers: {
-                    "Authorization": token ? `Bearer ${token}` : ""
-                }
+                headers: { "Authorization": token ? `Bearer ${token}` : "" }
             });
             
             if (response.status === 401) {
@@ -60,17 +96,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Добавление клавиатуры
     addKeyboardForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const keycapType = document.getElementById("keycapType").value.trim();
+        const keycapType = document.getElementById("keycapType").value;
         const baseType = document.getElementById("baseType").value.trim();
         const switchType = document.getElementById("switchType").value.trim();
         const color = document.getElementById("color").value.trim();
 
         if (!keycapType || !baseType || !switchType || !color) {
-            alert("Пожалуйста, заполните все поля");
+            alert("Пожалуйста, заполните все поля и выберите тип кейкапов");
             return;
         }
 
@@ -102,24 +137,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const result = JSON.parse(responseText);
             alert("Клавиатура успешно добавлена!");
             loadKeyboards();
             addKeyboardForm.reset();
+           
+            document.getElementById("keycapType").selectedIndex = 0;
         } catch (error) {
             console.error("Ошибка:", error);
             alert(`Ошибка сети: ${error.message}`);
         }
     });
 
-    // Редактирование клавиатуры
     window.editKeyboard = async function(id) {
         try {
             const token = getAuthToken();
             const response = await fetch(`http://localhost:9000/keyboard/${id}`, {
-                headers: {
-                    "Authorization": token ? `Bearer ${token}` : ""
-                }
+                headers: { "Authorization": token ? `Bearer ${token}` : "" }
             });
             
             if (response.status === 401) {
@@ -132,7 +165,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const keyboard = await response.json();
 
             document.getElementById("editId").value = keyboard.id;
-            document.getElementById("editKeycapType").value = keyboard.keycap_type;
+   
+            const editSelect = document.getElementById("editKeycapType");
+            for (let i = 0; i < editSelect.options.length; i++) {
+                if (editSelect.options[i].value === keyboard.keycap_type) {
+                    editSelect.selectedIndex = i;
+                    break;
+                }
+            }
             document.getElementById("editBaseType").value = keyboard.base_type;
             document.getElementById("editSwitchType").value = keyboard.switch_type;
             document.getElementById("editColor").value = keyboard.color;
@@ -145,18 +185,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Сохранение изменений
     editKeyboardForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
         const id = document.getElementById("editId").value;
-        const keycapType = document.getElementById("editKeycapType").value.trim();
+        const keycapType = document.getElementById("editKeycapType").value;
         const baseType = document.getElementById("editBaseType").value.trim();
         const switchType = document.getElementById("editSwitchType").value.trim();
         const color = document.getElementById("editColor").value.trim();
 
         if (!keycapType || !baseType || !switchType || !color) {
-            alert("Пожалуйста, заполните все поля");
+            alert("Пожалуйста, заполните все поля и выберите тип кейкапов");
             return;
         }
 
@@ -188,7 +227,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const result = JSON.parse(responseText);
             alert("Клавиатура успешно обновлена!");
             loadKeyboards();
             cancelEdit();
@@ -198,14 +236,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Отмена редактирования
     window.cancelEdit = function() {
         editKeyboardForm.style.display = "none";
         editOverlay.style.display = "none";
         editKeyboardForm.reset();
+    
+        document.getElementById("editKeycapType").selectedIndex = 0;
     };
 
-    // Удаление клавиатуры
     window.deleteKeyboard = async function(id) {
         if (!confirm("Вы уверены, что хотите удалить эту клавиатуру?")) {
             return;
@@ -215,9 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const token = getAuthToken();
             const response = await fetch(`http://localhost:9000/keyboard/${id}`, {
                 method: "DELETE",
-                headers: {
-                    "Authorization": token ? `Bearer ${token}` : ""
-                }
+                headers: { "Authorization": token ? `Bearer ${token}` : "" }
             });
 
             const responseText = await response.text();
@@ -232,7 +268,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const result = JSON.parse(responseText);
             alert("Клавиатура успешно удалена!");
             loadKeyboards();
         } catch (error) {
@@ -241,6 +276,137 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Загрузка клавиатур при открытии страницы
+  
+    async function loadKeycapTypes() {
+        try {
+            const token = getAuthToken();
+            const response = await fetch("http://localhost:9000/keycap_types", {
+                headers: { "Authorization": token ? `Bearer ${token}` : "" }
+            });
+            if (response.status === 401) {
+                alert("Сессия истекла");
+                localStorage.clear();
+                window.location.href = "/index.html";
+                return;
+            }
+            const types = await response.json();
+            const tbody = document.querySelector("#keycapTypesTable tbody");
+            tbody.innerHTML = "";
+            types.forEach(kt => {
+                const row = tbody.insertRow();
+                row.insertCell(0).innerText = kt.id;
+                row.insertCell(1).innerText = kt.name;
+                const actionsCell = row.insertCell(2);
+                actionsCell.innerHTML = `
+                    <button onclick="editKeycapType(${kt.id})">Ред.</button>
+                    <button class="delete" onclick="deleteKeycapType(${kt.id})">Удалить</button>
+                `;
+            });
+          
+            populateKeycapTypeSelects(types);
+        } catch (err) {
+            console.error("Ошибка загрузки типов:", err);
+        }
+    }
+
+    document.getElementById("addKeycapTypeForm")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const name = document.getElementById("keycapTypeName").value.trim();
+        if (!name) return alert("Введите название");
+        const token = getAuthToken();
+        try {
+            const res = await fetch("http://localhost:9000/keycap_types", {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json", 
+                    "Authorization": token ? `Bearer ${token}` : "" 
+                },
+                body: JSON.stringify({ name })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("Тип добавлен");
+                loadKeycapTypes();  
+                document.getElementById("addKeycapTypeForm").reset();
+            } else {
+                alert("Ошибка: " + (data.error || "Неизвестная"));
+            }
+        } catch (err) {
+            alert("Ошибка сети");
+        }
+    });
+
+    window.editKeycapType = async function(id) {
+        const token = getAuthToken();
+        try {
+            const res = await fetch(`http://localhost:9000/keycap_types/${id}`, {
+                headers: { "Authorization": token ? `Bearer ${token}` : "" }
+            });
+            const kt = await res.json();
+            document.getElementById("editKeycapTypeId").value = kt.id;
+            document.getElementById("editKeycapTypeName").value = kt.name;
+            document.getElementById("editKeycapTypeForm").style.display = "block";
+            document.getElementById("editKeycapTypeOverlay").style.display = "block";
+        } catch (err) {
+            alert("Ошибка загрузки данных");
+        }
+    };
+
+    document.getElementById("editKeycapTypeForm")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const id = document.getElementById("editKeycapTypeId").value;
+        const name = document.getElementById("editKeycapTypeName").value.trim();
+        if (!name) return alert("Введите название");
+        const token = getAuthToken();
+        try {
+            const res = await fetch(`http://localhost:9000/keycap_types/${id}`, {
+                method: "PUT",
+                headers: { 
+                    "Content-Type": "application/json", 
+                    "Authorization": token ? `Bearer ${token}` : "" 
+                },
+                body: JSON.stringify({ name })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("Тип обновлён");
+                loadKeycapTypes();
+                cancelEditKeycapType();
+            } else {
+                alert("Ошибка: " + (data.error || ""));
+            }
+        } catch (err) {
+            alert("Ошибка сети");
+        }
+    });
+
+    window.cancelEditKeycapType = function() {
+        document.getElementById("editKeycapTypeForm").style.display = "none";
+        document.getElementById("editKeycapTypeOverlay").style.display = "none";
+        document.getElementById("editKeycapTypeForm").reset();
+    };
+
+    window.deleteKeycapType = async function(id) {
+        if (!confirm("Удалить этот тип кейкапа? Это может повлиять на существующие клавиатуры, так как они ссылаются на название типа.")) return;
+        const token = getAuthToken();
+        try {
+            const res = await fetch(`http://localhost:9000/keycap_types/${id}`, {
+                method: "DELETE",
+                headers: { "Authorization": token ? `Bearer ${token}` : "" }
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("Тип удалён");
+                loadKeycapTypes();
+            } else {
+                alert("Ошибка: " + (data.error || ""));
+            }
+        } catch (err) {
+            alert("Ошибка сети");
+        }
+    };
+
+   
     loadKeyboards();
+    loadKeycapTypes();
 });

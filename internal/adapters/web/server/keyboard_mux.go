@@ -115,3 +115,102 @@ func (s *Server) MuxKeyboard() {
 		})
 	})
 }
+
+func (s *Server) MuxKeycapType() {
+	
+	s.mux.HandleFunc("GET /keycap_types", func(w http.ResponseWriter, r *http.Request) {
+		if !s.isAuthorized(r) {
+			w.WriteHeader(http.StatusUnauthorized)
+			s.writeJson(w, map[string]interface{}{"success": false, "error": "Требуется авторизация"})
+			return
+		}
+		types := s.keycapType.GetAll()
+		s.writeJson(w, mapper.ToKeycapTypeDtoList(types))
+	})
+
+
+	s.mux.HandleFunc("GET /keycap_types/{id}", func(w http.ResponseWriter, r *http.Request) {
+		if !s.isAuthorized(r) {
+			w.WriteHeader(http.StatusUnauthorized)
+			s.writeJson(w, map[string]interface{}{"success": false, "error": "Требуется авторизация"})
+			return
+		}
+		id := s.parseId(w, r)
+		if id == 0 {
+			return
+		}
+		kt := s.keycapType.Get(id)
+		if kt == nil {
+			w.WriteHeader(http.StatusNotFound)
+			s.writeJson(w, map[string]interface{}{"success": false, "error": "Тип не найден"})
+			return
+		}
+		s.writeJson(w, mapper.ToKeycapTypeDto(kt))
+	})
+
+
+	s.mux.HandleFunc("POST /keycap_types", func(w http.ResponseWriter, r *http.Request) {
+		if !s.isAdminAuthorized(r) {
+			w.WriteHeader(http.StatusUnauthorized)
+			s.writeJson(w, map[string]interface{}{"success": false, "error": "Требуются права администратора"})
+			return
+		}
+		var req dto.KeycapType
+		if err := s.parseObject(w, r, &req); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			s.writeJson(w, map[string]interface{}{"success": false, "error": "Некорректные данные"})
+			return
+		}
+		created := s.keycapType.Create(*mapper.FromKeycapTypeDto(&req))
+		s.writeJson(w, map[string]interface{}{
+			"success": true,
+			"message": "Тип кейкапа добавлен",
+			"data":    mapper.ToKeycapTypeDto(created),
+		})
+	})
+
+
+	s.mux.HandleFunc("PUT /keycap_types/{id}", func(w http.ResponseWriter, r *http.Request) {
+		if !s.isAdminAuthorized(r) {
+			w.WriteHeader(http.StatusUnauthorized)
+			s.writeJson(w, map[string]interface{}{"success": false, "error": "Требуются права администратора"})
+			return
+		}
+		id := s.parseId(w, r)
+		if id == 0 {
+			return
+		}
+		var req dto.KeycapType
+		if err := s.parseObject(w, r, &req); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			s.writeJson(w, map[string]interface{}{"success": false, "error": "Некорректные данные"})
+			return
+		}
+		updated := s.keycapType.Update(id, *mapper.FromKeycapTypeDto(&req))
+		if updated == nil {
+			w.WriteHeader(http.StatusNotFound)
+			s.writeJson(w, map[string]interface{}{"success": false, "error": "Тип не найден"})
+			return
+		}
+		s.writeJson(w, map[string]interface{}{
+			"success": true,
+			"message": "Тип обновлён",
+			"data":    mapper.ToKeycapTypeDto(updated),
+		})
+	})
+
+
+	s.mux.HandleFunc("DELETE /keycap_types/{id}", func(w http.ResponseWriter, r *http.Request) {
+		if !s.isAdminAuthorized(r) {
+			w.WriteHeader(http.StatusUnauthorized)
+			s.writeJson(w, map[string]interface{}{"success": false, "error": "Требуются права администратора"})
+			return
+		}
+		id := s.parseId(w, r)
+		if id == 0 {
+			return
+		}
+		s.keycapType.Delete(id)
+		s.writeJson(w, map[string]interface{}{"success": true, "message": "Тип удалён"})
+	})
+}

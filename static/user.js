@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Проверка авторизации
+
     const authToken = localStorage.getItem('authToken');
     
     if (!authToken) {
@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
     
-    // Загрузка клавиатур
+
     async function loadKeyboards() {
         try {
             const response = await fetch("http://localhost:9000/keyboard");
@@ -41,6 +41,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Загрузка клавиатур при открытии страницы
+   
     loadKeyboards();
 });
