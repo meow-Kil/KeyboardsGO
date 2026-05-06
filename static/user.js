@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadKeyboards() {
         try {
-            const response = await fetch("http://localhost:9000/keyboard");
+            const response = await fetch("http://localhost:1000/keyboard");
             
             if (response.status === 401) {
                 alert("Ошибка авторизации");
@@ -41,6 +41,28 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-   
+
+    async function loadKeycapTypes() {
+        try {
+            const response = await fetch("http://localhost:1000/keycap_types");
+            if (response.status === 401) {
+                localStorage.clear();
+                window.location.href = "/index.html";
+                return;
+            }
+            const types = await response.json();
+            const tbody = document.querySelector("#keycapTypesTable tbody");
+            tbody.innerHTML = "";
+            types.forEach(kt => {
+                const row = tbody.insertRow();
+                row.insertCell(0).innerText = kt.id;
+                row.insertCell(1).innerText = kt.name;
+            });
+        } catch (err) {
+            console.error("Ошибка загрузки типов:", err);
+        }
+    }
+
     loadKeyboards();
+    loadKeycapTypes();
 });

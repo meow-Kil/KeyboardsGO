@@ -110,9 +110,10 @@ func (s *PostgresStorage) Add(k domain.Keyboard) domain.Keyboard {
 	return k
 }
 
+
 func (s *PostgresStorage) Get() []domain.Keyboard {
-	query := `SELECT id, keycap_type, base_type, switch_type, color FROM keyboards`
-	rows, err := s.db.Query(query)
+
+	rows, err := s.db.Query(`SELECT id, keycap_type, base_type, switch_type, color FROM keyboards ORDER BY id`)
 	if err != nil {
 		log.Printf("Error getting keyboards: %v", err)
 		return []domain.Keyboard{}
@@ -122,14 +123,12 @@ func (s *PostgresStorage) Get() []domain.Keyboard {
 	var keyboards []domain.Keyboard
 	for rows.Next() {
 		var k domain.Keyboard
-		err := rows.Scan(&k.Id, &k.KeycapType, &k.BaseType, &k.SwitchType, &k.Color)
-		if err != nil {
+		if err := rows.Scan(&k.Id, &k.KeycapType, &k.BaseType, &k.SwitchType, &k.Color); err != nil {
 			log.Printf("Error scanning keyboard: %v", err)
 			continue
 		}
 		keyboards = append(keyboards, k)
 	}
-	
 	return keyboards
 }
 

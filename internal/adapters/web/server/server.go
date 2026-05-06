@@ -15,9 +15,9 @@ type Server struct {
 	srv      *http.Server
 	mux      *http.ServeMux
 	keyboard ports.KeyboardService
+	keycapType ports.KeycapTypeService 
 	storage  ports.Storage
 	sessions map[string]Session
-	keycapType ports.KeycapTypeService
 }
 
 type Session struct {
@@ -66,29 +66,49 @@ func (s *Server) parseObject(w http.ResponseWriter, r *http.Request, obj interfa
 	return json.NewDecoder(r.Body).Decode(obj)
 }
 
-func (s *Server) isAdminAuthorized(r *http.Request) bool {
+
+func (s *Server) getSession(r *http.Request) *Session {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
-		return false
+		return nil
 	}
 	
 	parts := strings.Split(authHeader, " ")
 	if len(parts) != 2 || parts[0] != "Bearer" {
-		return false
+		return nil
 	}
 	
 	token := parts[1]
 	session, exists := s.sessions[token]
 	if !exists {
-		return false
+		return nil
 	}
 	
 	if time.Now().After(session.Expires) {
 		delete(s.sessions, token)
-		return false
+		return nil
 	}
 	
+	return &session
+}
+
+
+func (s *Server) isAuthorized(r *http.Request) bool {
+	return s.getSession(r) != nil
+}
+
+
+func (s *Server) isAdminAuthorized(r *http.Request) bool {
+	session := s.getSession(r)
+	if session == nil {
+		return false
+	}
 	return session.IsAdmin
+}
+
+
+func (s *Server) getCurrentUser(r *http.Request) *Session {
+	return s.getSession(r)
 }
 
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -107,7 +127,6 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
 
 	existingUser, err := s.storage.GetUserByLogin(req.Login)
 	if err == nil && existingUser != nil {
@@ -140,8 +159,8 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	type LoginRequest struct {
-		Login    string `json:"login"`
-		Password string `json:"password"`
+		Login     string `json:"login"`
+		Password  string `json:"password"`
 		LoginType string `json:"login_type,omitempty"`
 	}
 
@@ -174,6 +193,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	
 	if req.LoginType == "admin" && !user.IsAdmin {
 		w.WriteHeader(http.StatusForbidden)
 		s.writeJson(w, map[string]interface{}{
@@ -183,7 +203,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
+
 	token := s.generateSessionToken()
 	
 
@@ -227,17 +247,16 @@ func New(keyboard ports.KeyboardService, keycapType ports.KeycapTypeService, sto
 	}
 
 	server := &Server{
-		keyboard: keyboard,
+		keyboard:   keyboard,
 		keycapType: keycapType,
-		storage:  storage,
-		srv:      &srv,
-		mux:      mux,
-		sessions: make(map[string]Session),
+		storage:    storage,
+		srv:        &srv,
+		mux:        mux,
+		sessions:   make(map[string]Session),
 	}
 
 	return server
 }
-
 
 func (s *Server) Listen() {
 	s.MuxKeyboard()
@@ -247,24 +266,4 @@ func (s *Server) Listen() {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func (s *Server) isAuthorized(r *http.Request) bool {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		return false
-	}
-	parts := strings.Split(authHeader, " ")
-	if len(parts) != 2 || parts[0] != "Bearer" {
-		return false
-	}
-	token := parts[1]
-	session, exists := s.sessions[token]
-	if !exists || time.Now().After(session.Expires) {
-		if exists {
-			delete(s.sessions, token)
-		}
-		return false
-	}
-	return true
 }

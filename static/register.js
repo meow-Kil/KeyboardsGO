@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
         submitBtn.textContent = 'Регистрация...';
 
         try {
-            const response = await fetch("http://localhost:9000/register", {
+            const response = await fetch("http://localhost:1000/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

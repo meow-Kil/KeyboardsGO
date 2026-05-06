@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
         submitBtn.textContent = 'Вход...';
 
         try {
-            const response = await fetch("http://localhost:9000/login", {
+            const response = await fetch("http://localhost:1000/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -69,7 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-  
             if (result.token) {
                 localStorage.setItem('authToken', result.token);
                 localStorage.setItem('userId', result.user_id);
@@ -78,7 +77,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 localStorage.setItem('authTime', Date.now().toString());
             }
 
-        
             if (result.redirect) {
                 window.location.href = result.redirect;
             } else if (result.is_admin && loginType === 'admin') {
@@ -96,14 +94,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-
     function checkExistingAuth() {
         const authToken = localStorage.getItem('authToken');
         const authTime = localStorage.getItem('authTime');
         const isAdmin = localStorage.getItem('isAdmin');
         
         if (authToken && authTime) {
-           
             const timeDiff = Date.now() - parseInt(authTime);
             if (timeDiff < 24 * 60 * 60 * 1000) {
                 if (isAdmin === 'true') {
@@ -112,7 +108,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     window.location.href = "/user.html";
                 }
             } else {
-              
                 localStorage.clear();
             }
         }

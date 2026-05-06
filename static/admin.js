@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  
+   
     const authToken = localStorage.getItem('authToken');
     const isAdmin = localStorage.getItem('isAdmin');
     
@@ -23,13 +23,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const addSelect = document.getElementById("keycapType");
         const editSelect = document.getElementById("editKeycapType");
         
- 
-        addSelect.innerHTML = '<option value="">Выберите тип кейкапов</option>';
-        editSelect.innerHTML = '<option value="">Выберите тип кейкапов</option>';
+  
+        addSelect.innerHTML = '<option value="">Выберите тип колпачков</option>';
+        editSelect.innerHTML = '<option value="">Выберите тип колпачков</option>';
         
         types.forEach(kt => {
             const option = document.createElement("option");
-            option.value = kt.name; 
+            option.value = kt.name;  
             option.textContent = kt.name;
             addSelect.appendChild(option);
             
@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
     async function refreshKeycapTypeSelects() {
         try {
             const token = getAuthToken();
-            const response = await fetch("http://localhost:9000/keycap_types", {
+            const response = await fetch("http://localhost:1000/keycap_types", {
                 headers: { "Authorization": token ? `Bearer ${token}` : "" }
             });
             if (response.ok) {
@@ -56,11 +56,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-
     async function loadKeyboards() {
         try {
             const token = getAuthToken();
-            const response = await fetch("http://localhost:9000/keyboard", {
+            const response = await fetch("http://localhost:1000/keyboard", {
                 headers: { "Authorization": token ? `Bearer ${token}` : "" }
             });
             
@@ -105,13 +104,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const color = document.getElementById("color").value.trim();
 
         if (!keycapType || !baseType || !switchType || !color) {
-            alert("Пожалуйста, заполните все поля и выберите тип кейкапов");
+            alert("Пожалуйста, заполните все поля и выберите тип колпачков");
             return;
         }
 
         try {
             const token = getAuthToken();
-            const response = await fetch("http://localhost:9000/keyboard", {
+            const response = await fetch("http://localhost:1000/keyboard", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -140,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("Клавиатура успешно добавлена!");
             loadKeyboards();
             addKeyboardForm.reset();
-           
+       
             document.getElementById("keycapType").selectedIndex = 0;
         } catch (error) {
             console.error("Ошибка:", error);
@@ -151,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.editKeyboard = async function(id) {
         try {
             const token = getAuthToken();
-            const response = await fetch(`http://localhost:9000/keyboard/${id}`, {
+            const response = await fetch(`http://localhost:1000/keyboard/${id}`, {
                 headers: { "Authorization": token ? `Bearer ${token}` : "" }
             });
             
@@ -165,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const keyboard = await response.json();
 
             document.getElementById("editId").value = keyboard.id;
-   
+    
             const editSelect = document.getElementById("editKeycapType");
             for (let i = 0; i < editSelect.options.length; i++) {
                 if (editSelect.options[i].value === keyboard.keycap_type) {
@@ -195,13 +194,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const color = document.getElementById("editColor").value.trim();
 
         if (!keycapType || !baseType || !switchType || !color) {
-            alert("Пожалуйста, заполните все поля и выберите тип кейкапов");
+            alert("Пожалуйста, заполните все поля и выберите тип колпачков");
             return;
         }
 
         try {
             const token = getAuthToken();
-            const response = await fetch(`http://localhost:9000/keyboard/${id}`, {
+            const response = await fetch(`http://localhost:1000/keyboard/${id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -240,7 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
         editKeyboardForm.style.display = "none";
         editOverlay.style.display = "none";
         editKeyboardForm.reset();
-    
+     
         document.getElementById("editKeycapType").selectedIndex = 0;
     };
 
@@ -251,7 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             const token = getAuthToken();
-            const response = await fetch(`http://localhost:9000/keyboard/${id}`, {
+            const response = await fetch(`http://localhost:1000/keyboard/${id}`, {
                 method: "DELETE",
                 headers: { "Authorization": token ? `Bearer ${token}` : "" }
             });
@@ -276,11 +275,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-  
+
     async function loadKeycapTypes() {
         try {
             const token = getAuthToken();
-            const response = await fetch("http://localhost:9000/keycap_types", {
+            const response = await fetch("http://localhost:1000/keycap_types", {
                 headers: { "Authorization": token ? `Bearer ${token}` : "" }
             });
             if (response.status === 401) {
@@ -302,7 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button class="delete" onclick="deleteKeycapType(${kt.id})">Удалить</button>
                 `;
             });
-          
+
             populateKeycapTypeSelects(types);
         } catch (err) {
             console.error("Ошибка загрузки типов:", err);
@@ -315,7 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!name) return alert("Введите название");
         const token = getAuthToken();
         try {
-            const res = await fetch("http://localhost:9000/keycap_types", {
+            const res = await fetch("http://localhost:1000/keycap_types", {
                 method: "POST",
                 headers: { 
                     "Content-Type": "application/json", 
@@ -339,7 +338,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.editKeycapType = async function(id) {
         const token = getAuthToken();
         try {
-            const res = await fetch(`http://localhost:9000/keycap_types/${id}`, {
+            const res = await fetch(`http://localhost:1000/keycap_types/${id}`, {
                 headers: { "Authorization": token ? `Bearer ${token}` : "" }
             });
             const kt = await res.json();
@@ -359,7 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!name) return alert("Введите название");
         const token = getAuthToken();
         try {
-            const res = await fetch(`http://localhost:9000/keycap_types/${id}`, {
+            const res = await fetch(`http://localhost:1000/keycap_types/${id}`, {
                 method: "PUT",
                 headers: { 
                     "Content-Type": "application/json", 
@@ -390,7 +389,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!confirm("Удалить этот тип кейкапа? Это может повлиять на существующие клавиатуры, так как они ссылаются на название типа.")) return;
         const token = getAuthToken();
         try {
-            const res = await fetch(`http://localhost:9000/keycap_types/${id}`, {
+            const res = await fetch(`http://localhost:1000/keycap_types/${id}`, {
                 method: "DELETE",
                 headers: { "Authorization": token ? `Bearer ${token}` : "" }
             });
