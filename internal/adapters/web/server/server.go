@@ -222,7 +222,7 @@ func New(keyboard ports.KeyboardService, keycapType ports.KeycapTypeService, sto
 	mux.Handle("/", fileServer)
 
 	srv := http.Server{
-		Addr:    ":9000",
+		Addr:    ":1000",
 		Handler: mux,
 	}
 

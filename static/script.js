@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 localStorage.setItem('authTime', Date.now().toString());
             }
 
-        я
+        
             if (result.redirect) {
                 window.location.href = result.redirect;
             } else if (result.is_admin && loginType === 'admin') {
